@@ -14,3 +14,10 @@
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::group(['prefix' => 'v1/order'], function () {
+    Route::get(
+        '/accepted',
+        ['uses' => '\App\Http\Controllers\V1\OrderController@accepted']
+    );
+});

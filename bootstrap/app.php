@@ -41,6 +41,37 @@ $app->singleton(
     App\Exceptions\Handler::class
 );
 
+$app->configureMonologUsing(function (\Monolog\Logger $monolog) use ($app) {
+
+   /*
+    * While setting up Monolog Handler we need to configure the level as well.
+    * By default all have the level as Debug
+    */
+
+    // Configure Logstash handler - For Kibana
+    $monolog->pushHandler(
+        $socketHandler = new \Monolog\Handler\SocketHandler(
+            $app->make('config')->get('logstash.connection_string', 'udp://127.0.0.1:7030')
+        )
+    );
+
+    // For syslog
+    // $monolog->pushHandler($handler = new \Monolog\Handler\SyslogHandler(
+    //     $this->applicationName()
+    // ));
+
+    $socketHandler->setFormatter(new \Monolog\Formatter\LogstashFormatter('sms-v1'));
+
+    // Reconfigure rotating file handler
+    $monolog->pushHandler(
+        $handler = new \Monolog\Handler\RotatingFileHandler(
+            $app->storagePath() . '/logs/laravel.log',
+            $app->make('config')->get('app.log_max_files', 15)
+        )
+    );
+    $handler->setFormatter(new \Monolog\Formatter\LineFormatter(null, null, true, true));
+});
+
 /*
 |--------------------------------------------------------------------------
 | Return The Application
